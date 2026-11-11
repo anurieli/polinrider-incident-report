@@ -79,12 +79,12 @@ Every step, with commands: [full write-up](psa-long-writeup.md#5-remediation-che
 
 We have clients, so we checked this first.
 
-**None of it reached production. Not on a client's app, and not on our own products.** Every infected build on those was a preview. That's because of safeguards we put in place for exactly this kind of day:
+**The last wave, and the biggest one, never reached production.** Not on a client's app, and not on our own products. On November 6 every infected build was a preview, because of safeguards we'd put in place for exactly this kind of day:
 - Our main branches block force-pushes, so the attacker could only rewrite side branches.
-- Production only ships from main.
+- Production only ships from main, and every push runs the scanner in CI.
 - The real secrets (databases, payments, auth, API keys) only exist in production. The infected previews could see public URLs and IDs and not much else. Where a preview did hold a real secret, we treat it as stolen and are rotating it.
 
-The one place it did reach production proves the point: an internal tool in an engineer's own repo, which had none of these protections.
+The earlier waves are a different story. In September and October, before those safeguards existed, the malware did land on our main branches, and production builds ran while it was there. So for every project hit then, we treat the production secrets as exposed too.
 
 It was still a close one. We had no real record of where all our keys lived. Answering "what could this build see?" meant going through Vercel project by project, by hand. We found database credentials on a site that doesn't use a database, and a GitHub Desktop token that was authorized once and never looked at again. We're fixing that: every secret scoped as narrowly as it can be, and one list of where they all live.
 
