@@ -8,7 +8,7 @@
 
 ## What happened
 
-In August our AI found us a project on the internet. It either picked it on its own or recommended it, and we didn't really care. We just went with it. One of us built it on a Mac. That one build patched the GitHub Desktop app and handed someone a token that could act as us.
+In August one of our engineers was moving fast on a build, and his AI agent found a project on the internet. It either picked it on its own or recommended it, and nobody really cared. We just went with it. He built it on his Mac. That one build patched the GitHub Desktop app and handed someone a token that could act as us.
 
 From then on they rewrote our real commits (same names, same dates, same messages) and added one thing: a line of malware at the end of a config file nobody opens, like `postcss.config.mjs`, hidden behind about 300 blank spaces so it sits off the edge of the screen. You could open the file and see nothing.
 
@@ -77,13 +77,24 @@ Every step, with commands: [full write-up](psa-long-writeup.md#5-remediation-che
 
 ## What it hit for us
 
-We have clients, so we checked this first. **No client's production app ever built an attacker commit.** Every infected client build was a preview, and on most client projects the real secrets were set for production only. So the infected previews could see public URLs and IDs and not much else. Where a preview build did hold a real secret, we treat it as stolen and are rotating it.
+We have clients, so we checked this first.
 
-That was luck. We had no real record of where our keys lived. Answering "what could this build see?" meant going through Vercel project by project, by hand. We found database credentials on a site that doesn't use a database, and a GitHub Desktop token that was authorized once and never looked at again. We're fixing that: every secret scoped as narrowly as it can be, and one list of where they all live.
+**None of it reached production. Not on a client's app, and not on our own products.** Every infected build on those was a preview. That's because of safeguards we put in place for exactly this kind of day:
+- Our main branches block force-pushes, so the attacker could only rewrite side branches.
+- Production only ships from main.
+- The real secrets (databases, payments, auth, API keys) only exist in production. The infected previews could see public URLs and IDs and not much else. Where a preview did hold a real secret, we treat it as stolen and are rotating it.
+
+The one place it did reach production proves the point: an internal tool in an engineer's own repo, which had none of these protections.
+
+It was still a close one. We had no real record of where all our keys lived. Answering "what could this build see?" meant going through Vercel project by project, by hand. We found database credentials on a site that doesn't use a database, and a GitHub Desktop token that was authorized once and never looked at again. We're fixing that: every secret scoped as narrowly as it can be, and one list of where they all live.
+
+And it's on us. We didn't put enough safeguards around what our engineers' agents were allowed to pull in. That's the trade everyone building with AI is making right now, between moving fast and moving properly. You can take that risk, as long as you have good systems underneath it.
 
 ## The lesson
 
 We all pull code from strangers now, all day. A repo from a tweet. A starter template. A package somebody's agent suggested. More and more, we're not even the one choosing. Your AI picks it, installs it, builds it. Your AI has no idea who wrote that repo, and it will run it on the machine that holds all your keys.
+
+If you're vibe coding, or letting agents run things you don't fully understand: run routine checks, and talk to someone who knows how to build systems that hold up against this. The attackers are using the same tools we are.
 
 Know what you're running. Especially when you didn't pick it.
 
