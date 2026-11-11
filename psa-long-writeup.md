@@ -32,7 +32,7 @@ Each infected branch also re-infects whoever builds it. That includes a teammate
 | 2026-09-01 | **Wave 1.** Malicious pushes to many repos. We cleaned up on 2026-09-02, but history still contained the payload. |
 | 2026-10-19 to 10-21 | **Wave 2.** This wave came from Windows pusher tooling (`temp_auto_push.bat`, `temp_interactive_push.bat`, `config.bat`, `branch_structure.json`). |
 | 2026-11-02 | **Wave 3.** Token-based force-pushes across about 60 repos. This time the committer name was the full name, and the committer offset was exactly 1 hour behind the author's. |
-| 2026-11-06 22:48 to 23:11 | **Wave 4.** 153 force-pushes in two passes. Within 20 minutes, Vercel ran **89 builds of attacker commits, 14 of them production deploys**. |
+| 2026-11-06 22:48 to 23:11 | **Wave 4.** 153 force-pushes in two passes. In the same 21 minutes, Vercel ran **32 builds of attacker commits** on our team. Two were production deploys of an internal tool; every client build was a preview. |
 
 Across all four waves, about 60 repos in 4 GitHub orgs/accounts were affected.
 
@@ -114,7 +114,7 @@ The payload runs on:
 
 So you should assume all of the following are stolen:
 - Everything the infected machine could reach: Git credentials, editor and app tokens, cloud CLIs, `.env` files on disk, and browser sessions.
-- **All environment variables of every project that built an infected commit**, in preview or production. For us that was 89 builds in 20 minutes, 14 of them production.
+- **All environment variables of every project that built an infected commit**, in preview or production. For us that was 32 builds in 21 minutes, two of them production.
 
 ---
 
