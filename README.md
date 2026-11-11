@@ -2,6 +2,8 @@
 
 *North Korea's PolinRider campaign put malware in about 60 of our repos, under our own names. Here's how to check if it's in yours, and what to do if it is.*
 
+*By Ariel Nurieli. The cleanup was engineered by Adi Alia ([@Adialia1](https://github.com/Adialia1)).*
+
 ---
 
 ## What happened
@@ -46,11 +48,11 @@ That covers the most common variants. Other signs:
 - `.gitignore` suddenly no longer ignoring `.env` or `.vscode`
 - Commits that look like yours but whose committer time zone isn't yours: `git log --format='%h %aI %cI %an | %cn'`
 
-For a full check, hand one of these to your AI coding tool:
+**Easiest full check: let your AI coding tool do it.** Open [`detect-prompt.md`](detect-prompt.md), copy the block, and paste it into Claude Code, Cursor or Codex. It audits your machine and repos read-only, reports INFECTED / SUSPICIOUS / CLEAN, and asks before it changes anything. Read it first. It's one page of plain text.
 
 | Tool | What it does |
 |---|---|
-| [`detect-prompt.md`](detect-prompt.md) | Paste into Claude Code, Cursor or Codex. Audits your machine and repos read-only, and asks before changing anything. |
+| [`detect-prompt.md`](detect-prompt.md) | The copy-paste prompt above. |
 | [`skill/polinrider-hunter`](skill/polinrider-hunter/SKILL.md) | A Claude Code skill with two scanners, one for repos and one for the machine. Each tests itself on a path with spaces first. |
 
 ## If you're hit: fix it in this order
@@ -91,6 +93,6 @@ One thing that worked: we wrote instructions into every repo telling our AI agen
 
 **Going deeper:** the [full write-up](psa-long-writeup.md) has every indicator, the full remediation checklist, and what we'd ask GitHub, Vercel and editor makers to change.
 
-**Credit:** [OpenSourceMalware](https://github.com/OpenSourceMalware/PolinRider), [Socket](https://socket.dev/blog/polinrider-github-packagist), [SafeDep](https://safedep.io/astro-config-blockchain-c2-supply-chain/) and [Microsoft](https://microsoft.com/en-us/security/blog/2026/02/24/c2-developer-targeting-campaign) did the research that made this possible to untangle.
+**Credit:** Adi Alia ([@Adialia1](https://github.com/Adialia1)) is the engineer who traced every push, restored every branch and built the scanners in this repo. [OpenSourceMalware](https://github.com/OpenSourceMalware/PolinRider), [Socket](https://socket.dev/blog/polinrider-github-packagist), [SafeDep](https://safedep.io/astro-config-blockchain-c2-supply-chain/) and [Microsoft](https://microsoft.com/en-us/security/blog/2026/02/24/c2-developer-targeting-campaign) did the public research that made it possible to untangle.
 
 **Seen this?** Especially the GitHub Desktop variant, or commits whose committer time is exactly one hour behind the author's. [Open an issue](../../issues). We'd like to compare notes.

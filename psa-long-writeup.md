@@ -1,6 +1,6 @@
 # We were hit by PolinRider. Here's what it looked like, how to check yourself, and what actually stopped it
 
-*By Ariel Nurieli. November 9, 2026.*
+*By Ariel Nurieli. Cleanup engineered by Adi Alia ([@Adialia1](https://github.com/Adialia1)). November 11, 2026.*
 
 **Summary.** Between August and November 2026, a build-time injector matching public reporting on **PolinRider** pushed malicious commits to about 60 of our repositories across 4 GitHub orgs and accounts, in four waves. PolinRider is attributed to the DPRK / Lazarus "Contagious Interview" cluster and belongs to the EtherHiding family, which resolves its C2 through blockchain transactions. The pushes came from the attacker's own host, using our own tokens, and they look like our own commits. This post covers what we saw, the indicators, a read-only way to check your machine and repos, and the defenses that actually worked. We're a small team, and we're publishing this because the public write-ups helped us. **Have you seen this pattern? We'd like to compare notes.**
 
