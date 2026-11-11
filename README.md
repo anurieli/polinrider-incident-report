@@ -61,19 +61,44 @@ That check covers the most common variant only. For the rest:
 | Nov 2 | **Wave 3.** Token-based force-pushes across about 60 repos. |
 | Nov 6, 22:48 to 23:11 | **Wave 4.** 153 force-pushes. Vercel runs 89 builds of attacker commits, 14 of them production. |
 
-## What worked, what didn't
+## How we dug out
 
-**Worked**
-- Rulesets that block force-pushes on default branches. Repos that had them came through wave 4 untouched. GitHub Free doesn't offer them on private repos, which is where we got hit.
-- A scanner that checks the shape of a file (a 2,000 character config line, code after a run of blanks) instead of matching strings.
-- `codesign --verify --deep --strict` on macOS apps. A broken seal exposed the patched GitHub Desktop in seconds.
-- GitHub's Activity API, which lists the before and after SHA of every force-push, so we could restore branches exactly.
+The first three cleanups failed because we fixed what we could see. The fourth one worked because we stopped guessing and made lists. This is the order we'd do it in again.
 
-**Didn't**
-- Grepping for known strings. The variants change them.
-- Revoking some tokens. It has to be all of them, from a clean machine.
-- Cleaning the code without rotating the secrets. If an infected commit built, assume every env var on that project is stolen.
-- A scanner that had never been tested on a path with a space in it.
+**1. Find every push.** We stopped trusting the GitHub UI and pulled the force-push log for every repo from GitHub's Activity API. It records the commit before and after every force-push, along with who did it. That's how we know it was 153 force-pushes on November 6, and which branches they landed on.
+
+**2. Put every branch back exactly where it was.** For each force-push we scanned the "before" commit first, because an earlier wave could already be sitting in it. Then we reset the branch to the last clean commit by its exact SHA, and scanned every remote branch again afterwards. On our main site repo that was 30 branches, all clean.
+
+**3. Find every build that ran it.** The malware runs when the code builds. So we listed every Vercel deployment in the attack window and matched each one to the commit it built. Anything built from an attacker commit counts as a machine that ran the malware.
+
+**4. Check what each of those builds could see.** This is how we answered the question we cared about most: did it reach our clients? A Vercel build only gets the environment variables set for its environment. A preview build never sees a production-only secret. So for every infected build we wrote down exactly which variables it had access to.
+
+**5. Treat the laptop as burned.** `codesign --verify --deep --strict` on every Electron app, reinstall anything with a broken seal from the vendor, and hunt down the leftovers (`*.inz.orig`, odd LaunchAgents, `node -e` processes).
+
+**6. Revoke everything, from a clean machine.** Every OAuth app, every personal token, every SSH key, in every account and every org. People count too. A compromised account loses admin until its machine is clean. We learned that one late: the account that had been used against us was still an org admin two days after the last wave.
+
+**7. Make the next attempt bounce.** Every repo now has rulesets that block force-pushes on the default branch, a shape-based scanner, a pre-push hook and a CI check that fails on a hit. Every repo also has instructions for AI agents: run the scan before any install, build, test or push, and if it fails, stop and tell a human. Don't fix it quietly.
+
+## What it hit, and what it didn't
+
+We have clients. This is the part they'd ask about, so here it is straight.
+
+- **No client's production app ever built an attacker commit.** Every infected build on a client project was a preview build.
+- **On most client projects, the preview builds had nothing worth stealing.** The real secrets (databases, payments, auth, API keys) were set for production only. What the infected previews could see was public URLs and IDs that already ship to every browser.
+- **Where a preview build did hold a real secret, we treat it as stolen and rotate it.** We don't know that the malware read it. It ran with access to it, and that's enough.
+- **Where it actually ran:** two of our own machines, Vercel preview builds, and production builds of one internal tool. That's the blast radius we know about, and it's the one we cleaned.
+
+None of that was planned. We just happened to have scoped most secrets to production. It's the single reason this is an embarrassing story and not a client breach.
+
+## What we learned
+
+- **We had no idea where our keys were.** When we had to answer "which secrets could this build see?", we went project by project in Vercel, by hand. We found database credentials on a site that doesn't use a database. Keys nobody remembered adding. A GitHub Desktop token that was authorized once and never looked at again. Our key tracking was honestly terrible. Now every secret gets the narrowest environment it can live in, and we keep a list we can actually read.
+- **Clean the history, not just the latest commit.** The payload is still in old commits. Merge, rebase or check out an old infected branch and it's back. That's how wave 1 came back after we "cleaned" it.
+- **Half a cleanup is no cleanup.** One token we didn't revoke, one admin seat we didn't pull. Each time it was enough.
+- **Check the shape of a file, not the strings in it.** Grepping for known strings missed variants. A config line over 2,000 characters, or code after a long run of blanks, caught all of them.
+- **Test your scanner before you trust it.** Ours had never seen a path with a space in it, and it said "clean".
+- **Block force-pushes on your default branches.** Repos with that ruleset came through the last wave untouched. GitHub Free doesn't offer rulesets on private repos, which is exactly where we got hit. If that's you, it's worth paying for the plan, or at least running the scanner in CI on every push.
+- **Your AI follows the rules you write down.** The same agents that would have happily built the malware now refuse to. On November 6 one of them found the injected commits, stopped, and told us, instead of building or "fixing it quietly".
 
 ## Going deeper
 
